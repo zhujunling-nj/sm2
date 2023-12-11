@@ -8,8 +8,9 @@
 * SM2加密/解密。
 
 ## 安装方法
-1. 执行 pip3 wheel . 构建版本包；
-2. 执行 pip install sm2-x.x.x-py3-none-any.whl 安装
+1. 依赖sm3，需要先安装sm3；
+2. 执行 pip3 wheel . 构建版本包；
+3. 执行 pip install sm2-x.x.x-py3-none-any.whl 安装
 
 ## 使用样例
 ```
