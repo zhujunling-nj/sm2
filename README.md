@@ -7,6 +7,10 @@
 * SM2签名/验签。
 * SM2加密/解密。
 
+## 安装方法
+1. 执行 pip3 wheel . 构建版本包；
+2. 执行 pip install sm2-x.x.x-py3-none-any.whl 安装
+
 ## 使用样例
 ```
 from sm2 import SM2
