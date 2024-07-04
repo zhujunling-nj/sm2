@@ -9,7 +9,7 @@ def main():
           description="Python interface for the sm2.",
           author="Zhu Junling",
           author_email="jl.zhu@tom.com",
-          py_modules=["sm2", "curve", "fieldp"],
+          packages=["sm2"],
           requires=["sm3"]
     )
 

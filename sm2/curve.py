@@ -1,7 +1,7 @@
 #-*-coding:utf8;-*-
 ''' 素数域上的椭圆曲线(Curve) '''
 from secrets import randbelow
-from fieldp import FP
+from .fieldp import FP
 
 
 class CurveError(Exception):

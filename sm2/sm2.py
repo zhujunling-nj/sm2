@@ -1,8 +1,8 @@
 #-*-coding:utf8;-*-
 ''' 素数域上的椭圆曲线(SM2) '''
 from sm3 import sm3_hash
-from curve import Curve
-from fieldp import FP
+from .curve import Curve
+from .fieldp import FP
 
 
 class CurveSM2(Curve):
