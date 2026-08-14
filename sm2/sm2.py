@@ -1,12 +1,12 @@
 #-*-coding:utf8;-*-
-''' 素数域上的椭圆曲线(SM2) '''
+""" 素数域上的椭圆曲线(SM2) """
 from sm3 import sm3_hash
 from .curve import Curve
 from .fieldp import FP
 
 
 class CurveSM2(Curve):
-    ''' 素数域上的椭圆曲线(SM2)计算 '''
+    """ 素数域上的椭圆曲线(SM2)计算 """
     __slots__ = []
     P = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF
     A = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC
@@ -23,43 +23,43 @@ CurveSM2.CACHE = CurveSM2.create_cache(CurveSM2.BASE)
 
 
 class SM2PrivateKey(int):
-    ''' SM2 Private Key '''
+    """ SM2 Private Key """
     __slots__ = []
 
     def public_key(self):
-        ''' Get Public Key '''
+        """ Get Public Key """
         return CurveSM2.gmul(self)
 
 
 class SM2Error(Exception):
-    ''' SM2加解密错误 '''
-    __slots__ = ['msg']
+    """ SM2加解密错误 """
+    __slots__ = ['message']
 
-    def __init__(self, msg):
+    def __init__(self, message):
         super().__init__()
-        self.msg = msg
+        self.message = message
 
     def __str__(self):
-        return self.msg
+        return self.message
 
 
 class SM2:
-    '''
+    """
         SM2 加密/解密, 签名/验签
         解密/签名使用Private Key
         加密/验签使用Public Key
-    '''
+    """
     __slots__ = ['public_key', 'private_key', 'cache', 'user_z']
     USER_ID = b'1234567812345678'
 
     @staticmethod
     def create_private_key():
-        ''' Create Private Key '''
+        """ Create Private Key """
         return SM2PrivateKey(CurveSM2.random())
 
     @staticmethod
     def create_public_key(valuex, valuey=0):
-        ''' Create Public Key '''
+        """ Create Public Key """
         return CurveSM2.from_bytes(valuex) \
             if isinstance(valuex, (bytes, bytearray)) \
             else CurveSM2(valuex, valuey)
@@ -89,7 +89,7 @@ class SM2:
 
 
     def fmul(self, kkk, affine=True):
-        ''' 公钥倍乘运算, 使用缓存加速 '''
+        """ 公钥倍乘运算, 使用缓存加速 """
         if not self.cache:
             return self.public_key * kkk
         result = CurveSM2.ZERO.copy()
@@ -100,7 +100,7 @@ class SM2:
 
 
     def verify(self, sign, data):
-        ''' 验签函数, sign: 签名r||s, data: 待验签的消息(bytes) '''
+        """ 验签函数, sign: 签名r||s, data: 待验签的消息(bytes) """
         rrr, sss = SM2._decode_signed_asn1(sign)
         ttt = (rrr + sss) % CurveSM2.N
         if rrr == 0 or sss == 0 or ttt == 0 or rrr >= CurveSM2.N or sss >= CurveSM2.N:
@@ -112,7 +112,7 @@ class SM2:
 
 
     def sign(self, data):
-        ''' 签名函数, data: 待签名的消息(bytes) '''
+        """ 签名函数, data: 待签名的消息(bytes) """
         if self.private_key is None:
             raise SM2Error('No private key specified.')
 
@@ -131,7 +131,7 @@ class SM2:
 
 
     def encrypt(self, plaintext, mode='asn1'):
-        ''' 加密函数, plaintext: 明文(bytes) '''
+        """ 加密函数, plaintext: 明文(bytes) """
         if mode not in {'c1c2c3', 'c1c3c2', 'c1c2', 'asn1'}:
             raise SM2Error('The mode shoud be c1c2c3 or c1c3c2 or asn1.')
         if plaintext == b'':
@@ -139,9 +139,9 @@ class SM2:
 
         # 生成随机数 k
         kkk = CurveSM2.random()
-        # 生成椭圆曲线上的点C1 = k * G, 需要编码到密文中
+        # 生成椭圆曲线上的点C1 = [k]G, 需要编码到密文中
         point1 = CurveSM2.gmul(kkk)
-        # 生成椭圆曲线上的点C2 = k * PK
+        # 生成椭圆曲线上的点C2 = [k]PK
         point2 = self.fmul(kkk)
         # 根据点C2生成加密密钥
         x2_bytes = point2.bytes_x
@@ -169,7 +169,7 @@ class SM2:
 
 
     def decrypt(self, data, mode='asn1'):
-        ''' 解密函数, data: 密文(bytes) '''
+        """ 解密函数, data: 密文(bytes) """
         if mode not in {'c1c2c3', 'c1c3c2', 'c1c2', 'asn1'}:
             raise SM2Error('The mode shoud be c1c2c3 or c1c3c2 or asn1.')
         if self.private_key is None:
@@ -178,9 +178,9 @@ class SM2:
                 if mode == 'asn1' else SM2._decode_ciphertext(data, mode)
 
         # 根据私钥生成点C2, 此C2等于加密时的C2
-        # 私钥: SK, 公钥: PK = SK * G
-        # 加密时: C1 = k * G,  C2 = k * PK = k * (SK * G) = k * SK * G
-        # 解密时: C2' = SK * C1 = SK * (k * G) = SK * k * G = C2
+        # 私钥: SK, 公钥: PK = [SK]G
+        # 加密时: C1 = [k]G,  C2 = [k]PK = [k][SK]G = [k*SK]G
+        # 解密时: C2' = [SK]C1 = [SK][k]G = [SK*k]G = C2
         point2 = point1 * self.private_key
         # 根据点C2生成解密密钥
         x2_bytes = point2.bytes_x
@@ -226,7 +226,7 @@ class SM2:
 
     @staticmethod
     def _decode_signed_asn1(sign):
-        ''' 按ASN.1 BER规则解码签名 '''
+        """ 按ASN.1 BER规则解码签名 """
         sign, rest = ASN1.decode_sequence(sign)
         if sign == b'' or rest != b'':
             raise SM2Error('Invalid signed bytes.')
@@ -236,7 +236,7 @@ class SM2:
 
     @staticmethod
     def _decode_ciphertext_asn1(data):
-        ''' 按ASN.2 BER规则解码密文 '''
+        """ 按ASN.2 BER规则解码密文 """
         data, rest = ASN1.decode_sequence(data)
         if data == b'' or rest != b'':
             raise SM2Error('Invalid cipher text.')
@@ -250,7 +250,7 @@ class SM2:
 
     @staticmethod
     def _decode_ciphertext(data, mode):
-        ''' 按C1C2C3或C1C3C2或C1C2顺序解码密文 '''
+        """ 按C1C2C3或C1C3C2或C1C2顺序解码密文 """
         dlen = len(data)
         if dlen < 66 or data[0] != 4:
             raise SM2Error('Invalid cipher text.')
@@ -268,42 +268,42 @@ class SM2:
 
 
 class ASN1Error(Exception):
-    ''' ASN.1编解码错误 '''
-    __slots__ = ['msg']
+    """ ASN.1编解码错误 """
+    __slots__ = ['message']
 
-    def __init__(self, msg):
+    def __init__(self, message):
         super().__init__()
-        self.msg = msg
+        self.message = message
 
     def __str__(self):
-        return self.msg
+        return self.message
 
 
 class ASN1:
-    ''' ASN.1编解码 '''
+    """ ASN.1编解码 """
     __slots__ = []
 
     @staticmethod
     def encode_int(value):
-        ''' 按ASN.1 BER规则编码整数 '''
+        """ 按ASN.1 BER规则编码整数 """
         asn_len = (value.bit_length() >> 3) + 1
         asn_bytes = int2bytes(value, asn_len)
         return b'\x02' + ASN1.encode_length(asn_len) + asn_bytes
 
     @staticmethod
     def encode_octet(octet):
-        ''' 按ASN.1 BER规则编码Octet '''
+        """ 按ASN.1 BER规则编码Octet """
         return b'\x04' + ASN1.encode_length(len(octet)) + octet
 
     @staticmethod
     def encode_sequence(*args):
-        ''' 按ASN.1 BER规则编码序列 '''
+        """ 按ASN.1 BER规则编码序列 """
         asn_bytes = b''.join(args)
         return b'\x30' + ASN1.encode_length(len(asn_bytes)) + asn_bytes
 
     @staticmethod
     def encode_length(length):
-        ''' 按ASN.1 BER规则编码字段长度 '''
+        """ 按ASN.1 BER规则编码字段长度 """
         if length < 0x80:
             return int2bytes(length, 1)
         lenlen = length.bit_length() + 7 >> 3
@@ -311,7 +311,7 @@ class ASN1:
 
     @staticmethod
     def decode_int(data):
-        ''' 按ASN.1 BER规则解码整数 '''
+        """ 按ASN.1 BER规则解码整数 """
         if data[0] != 2:
             raise ASN1Error('Integer tag error: ' + data[0])
         asn_len, data = ASN1.decode_length(data[1:])
@@ -321,7 +321,7 @@ class ASN1:
 
     @staticmethod
     def decode_octet(data):
-        ''' 按ASN.1 BER规则解码Octet '''
+        """ 按ASN.1 BER规则解码Octet """
         if data[0] != 4:
             raise ASN1Error('Octet tag error: ' + data[0])
         asn_len, data = ASN1.decode_length(data[1:])
@@ -331,7 +331,7 @@ class ASN1:
 
     @staticmethod
     def decode_sequence(data):
-        ''' 按ASN.1 BER规则解码序列 '''
+        """ 按ASN.1 BER规则解码序列 """
         if data[0] != 0x30:
             raise ASN1Error('Sequence tag error: ' + data[0])
         asn_len, data = ASN1.decode_length(data[1:])
@@ -341,7 +341,7 @@ class ASN1:
 
     @staticmethod
     def decode_length(data):
-        ''' 按ASN.1 BER规则解码长度字段 '''
+        """ 按ASN.1 BER规则解码长度字段 """
         length = data[0]
         if length < 128:
             return length, data[1:]
@@ -353,13 +353,13 @@ class ASN1:
 
 
 def int2bytes(value, length):
-    ''' Convert Integer to Bytes '''
+    """ Convert Integer to Bytes """
     return value.to_bytes(length, 'big')
 
 def bytes2int(bytestr):
-    ''' Convert Bytes to Integer '''
+    """ Convert Bytes to Integer """
     return int.from_bytes(bytestr, 'big')
 
 def bitxor(data1, data2):
-    ''' Xor Byte to Byte '''
+    """ Xor Byte to Byte """
     return bytes(a ^ b for a, b in zip(data1, data2))

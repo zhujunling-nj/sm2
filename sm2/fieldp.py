@@ -1,20 +1,20 @@
 #-*-coding:utf8;-*-
-''' 素数域FP上的数学运算 '''
+""" 素数域FP上的数学运算 """
 
 class FP:
-    ''' 素数域上的数学运算 '''
+    """ 素数域上的数学运算 """
     __slots__ = []
     POW_2_P_4 = {}  # 2**((P-1)/4)  (mod P)
     FACTOR_P1 = {}  # P-1 = S*2^T
 
     @staticmethod
     def divn(num, aaa, bbb):
-        ''' 模除运算 '''
+        """ 模除运算 """
         return aaa * FP.invn(num, bbb) % num
 
     @staticmethod
     def invn(num, aaa):
-        ''' 模逆运算 '''
+        """ 模逆运算 """
         if aaa in {0, 1}:
             return aaa
         xxx, yyy = 1, 0
@@ -27,7 +27,7 @@ class FP:
 
     @staticmethod
     def pown(num, aaa, exp):
-        ''' 模快幂运算 '''
+        """ 模快幂运算 """
         if aaa in {0, 1}:
             return aaa
         result = aaa
@@ -40,13 +40,13 @@ class FP:
 
     @staticmethod
     def is_square(num, aaa):
-        ''' 判断是否为平方数(模P的二次剩余) '''
+        """ 判断是否为平方数(模P的二次剩余) """
         #return aaa in {0, 1} or FP.pown(num, aaa, num >> 1) == 1
         return aaa in {0, 1} or FP.legendre(num, aaa) == 1
 
     @staticmethod
     def legendre(num, aaa):
-        ''' 计算勒让德符号: 二次互反律 '''
+        """ 计算勒让德符号: 二次互反律 """
         result = 1
         while aaa != 1:
             if aaa == 0:
@@ -65,7 +65,7 @@ class FP:
 
     @staticmethod
     def sqrtp(num, aaa, sign=0):
-        ''' 素数域上的平方根运算(模P的二次剩余) '''
+        """ 素数域上的平方根运算(模P的二次剩余) """
         if aaa in {0, 1}:
             return aaa
         #if not FP.is_square(num, aaa):
@@ -98,7 +98,7 @@ class FP:
 
     @staticmethod
     def _sqrtp(num, aaa, sign=0):
-        ''' Tonelli-Shanks(托内利-尚克斯)算法 '''
+        """ Tonelli-Shanks(托内利-尚克斯)算法 """
         # 提取p-1的所有2因子: p-1 = s*2^t
         if num not in FP.FACTOR_P1:
             ttt = 0
